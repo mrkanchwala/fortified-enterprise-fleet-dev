@@ -17,11 +17,11 @@ _PII_PATTERNS = {
 }
 
 _INJECTION_PATTERNS = [
-    re.compile(r"ignore (all|any|previous|prior) instructions", re.I),
-    re.compile(r"disregard (the )?(above|previous)", re.I),
-    re.compile(r"^\s*(system|assistant)\s*:", re.I | re.M),
-    re.compile(r"\byou are now\b", re.I),
-    re.compile(r"new instructions?\s*:", re.I),
+    re.compile(r"ignore (all|any|previous|prior) instructions", re.IGNORECASE),
+    re.compile(r"disregard (the )?(above|previous)", re.IGNORECASE),
+    re.compile(r"^\s*(system|assistant)\s*:", re.IGNORECASE | re.MULTILINE),
+    re.compile(r"\byou are now\b", re.IGNORECASE),
+    re.compile(r"new instructions?\s*:", re.IGNORECASE),
 ]
 
 

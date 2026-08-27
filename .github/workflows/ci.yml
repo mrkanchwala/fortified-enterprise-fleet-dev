@@ -36,11 +36,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      # uvx, not `uv run` — ruff is deliberately not a project dependency, so
-      # it runs from a standalone tool environment rather than forcing a
+      # uvx, not `uv run`: ruff is deliberately not a project dependency, so it
+      # runs from a standalone tool environment rather than forcing a
       # pyproject/uv.lock change just to lint.
+      #
+      # The version is PINNED on purpose. An unpinned `uvx ruff` resolves to
+      # whatever shipped that morning, and 0.16 widened the default rule set,
+      # which turned this workflow red on its very first run with no code
+      # change at all. A repo frozen for a judging window cannot afford CI that
+      # breaks on someone else's release schedule.
       - name: Lint
-        run: uvx ruff check src/ tests/
+        run: uvx ruff@0.16.4 check src/ tests/
 
       - name: Test
         run: uv run pytest -q

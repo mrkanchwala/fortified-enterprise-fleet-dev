@@ -12,7 +12,11 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from fleet_hackathon.config import AUDIT_COUNTER_DOC, COLLECTION_AUDIT_LOG, COLLECTION_STATS
+from fleet_hackathon.config import (
+    AUDIT_COUNTER_DOC,
+    COLLECTION_AUDIT_LOG,
+    COLLECTION_STATS,
+)
 
 
 @dataclass

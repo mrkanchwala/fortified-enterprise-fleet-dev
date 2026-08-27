@@ -34,10 +34,10 @@ from datetime import UTC, datetime, timedelta
 from fleet_hackathon.config import (
     AUDIT_COUNTER_DOC,
     COLLECTION_AUDIT_LOG,
-    COLLECTION_STATS,
     COLLECTION_DEALS,
     COLLECTION_INVOICES,
     COLLECTION_LEADS,
+    COLLECTION_STATS,
 )
 
 # Marker embedded in every generated id. Prune refuses to delete anything

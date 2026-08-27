@@ -104,7 +104,7 @@ def test_ceiling_of_zero_disables_live_calls_entirely(fake_db):
 def test_cache_hit_skips_the_second_call(fake_db):
     fn = _CountingNarrateFn()
     narrator = GeminiNarrator(fake_db, max_per_tick=10, narrate_fn=fn)
-    kwargs = dict(agent_name="invoice", action="issue_invoice", status="ok", success_criterion="crit")
+    kwargs = {"agent_name": "invoice", "action": "issue_invoice", "status": "ok", "success_criterion": "crit"}
 
     first = narrator.narrate(**kwargs)
     second = narrator.narrate(**kwargs)
@@ -117,7 +117,7 @@ def test_cache_survives_a_new_narrator_instance(fake_db):
     """The cache is Firestore-backed, not per-process — a new Cloud Run
     instance or the next tick must not re-pay for the same decision class."""
     fn = _CountingNarrateFn()
-    kwargs = dict(agent_name="invoice", action="issue_invoice", status="ok", success_criterion="crit")
+    kwargs = {"agent_name": "invoice", "action": "issue_invoice", "status": "ok", "success_criterion": "crit"}
 
     GeminiNarrator(fake_db, max_per_tick=10, narrate_fn=fn).narrate(**kwargs)
     GeminiNarrator(fake_db, max_per_tick=10, narrate_fn=fn).narrate(**kwargs)
@@ -148,7 +148,7 @@ def test_prompt_carries_no_record_specifics(fake_db):
 def test_differing_statuses_are_cached_separately(fake_db):
     fn = _CountingNarrateFn()
     narrator = GeminiNarrator(fake_db, max_per_tick=10, narrate_fn=fn)
-    base = dict(agent_name="payment_followup", action="send_reminder", success_criterion="crit")
+    base = {"agent_name": "payment_followup", "action": "send_reminder", "success_criterion": "crit"}
 
     narrator.narrate(**base, status="ok", drift_detected=False)
     narrator.narrate(**base, status="drift", drift_detected=True)
@@ -303,12 +303,12 @@ def test_dashboard_renders_mixed_narrated_and_unnarrated_entries(fake_db):
     seed_demo_data.seed(fake_db)
     runtime.ensure_registered(fake_db)
     logger = AuditLogger(fake_db)
-    common = dict(
-        agent_name="invoice",
-        action="issue_invoice",
-        status="ok",
-        success_criterion="crit",
-    )
+    common = {
+        "agent_name": "invoice",
+        "action": "issue_invoice",
+        "status": "ok",
+        "success_criterion": "crit",
+    }
     logger.log(trace_id=logger.new_trace_id(), detail="older entry", **common)
     logger.log(
         trace_id=logger.new_trace_id(),
@@ -334,7 +334,7 @@ def test_version_bump_invalidates_every_cached_narration(fake_db, monkeypatch):
     observed, not hypothetical — shipping the prompt fix must also clear the
     output it produced."""
     fn = _CountingNarrateFn()
-    kwargs = dict(agent_name="invoice", action="issue_invoice", status="ok", success_criterion="c")
+    kwargs = {"agent_name": "invoice", "action": "issue_invoice", "status": "ok", "success_criterion": "c"}
 
     GeminiNarrator(fake_db, max_per_tick=5, narrate_fn=fn).narrate(**kwargs)
     assert len(fn.calls) == 1

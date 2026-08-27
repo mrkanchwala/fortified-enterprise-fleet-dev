@@ -10,7 +10,11 @@ import random
 from datetime import UTC, datetime, timedelta
 
 from fleet_hackathon import demo_stream
-from fleet_hackathon.config import COLLECTION_DEALS, COLLECTION_INVOICES, COLLECTION_LEADS
+from fleet_hackathon.config import (
+    COLLECTION_DEALS,
+    COLLECTION_INVOICES,
+    COLLECTION_LEADS,
+)
 
 NOW = datetime(2026, 8, 11, 12, 0, tzinfo=UTC)
 
@@ -119,7 +123,7 @@ def test_pruning_a_deal_also_removes_its_auto_issued_invoice(fake_db):
     """Otherwise the Invoice Agent's output outlives its deal and the dashboard
     shows an invoice referencing a deal that no longer exists."""
     demo_stream.inject(fake_db, now=NOW, rng=_rng())
-    oldest_deal_id = sorted(_ids(fake_db, COLLECTION_DEALS))[0]
+    oldest_deal_id = min(_ids(fake_db, COLLECTION_DEALS))
     # simulate the Invoice Agent having issued against it
     fake_db.collection(COLLECTION_INVOICES).document(f"inv-{oldest_deal_id}").set(
         {"invoice_id": f"inv-{oldest_deal_id}", "deal_id": oldest_deal_id, "status": "issued"}

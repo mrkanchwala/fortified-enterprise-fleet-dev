@@ -10,7 +10,11 @@ Two CRITICAL findings:
 
 from fleet_hackathon import app as app_module
 from fleet_hackathon import demo_stream
-from fleet_hackathon.config import AUDIT_COUNTER_DOC, COLLECTION_AUDIT_LOG, COLLECTION_STATS
+from fleet_hackathon.config import (
+    AUDIT_COUNTER_DOC,
+    COLLECTION_AUDIT_LOG,
+    COLLECTION_STATS,
+)
 from fleet_hackathon.telemetry import AuditLogger
 
 REAL_CLIENT = "203.0.113.9"

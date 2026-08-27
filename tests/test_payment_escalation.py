@@ -5,7 +5,10 @@ calls out as the thing that makes it more than a cron job."""
 from datetime import UTC, datetime, timedelta
 
 from fleet_hackathon.agents.payment_followup import decide
-from fleet_hackathon.config import OVERDUE_ESCALATION_DAYS, OVERDUE_ESCALATION_REMINDER_COUNT
+from fleet_hackathon.config import (
+    OVERDUE_ESCALATION_DAYS,
+    OVERDUE_ESCALATION_REMINDER_COUNT,
+)
 
 NOW = datetime(2026, 8, 7, tzinfo=UTC)
 

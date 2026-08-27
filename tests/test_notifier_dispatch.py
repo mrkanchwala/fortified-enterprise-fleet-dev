@@ -7,7 +7,11 @@ here too, so a future change can't silently widen its scope.
 from datetime import UTC, datetime
 
 from fleet_hackathon.capability import ALL_SCOPES
-from fleet_hackathon.config import COLLECTION_DEALS, COLLECTION_INVOICES, COLLECTION_LEADS
+from fleet_hackathon.config import (
+    COLLECTION_DEALS,
+    COLLECTION_INVOICES,
+    COLLECTION_LEADS,
+)
 from fleet_hackathon.gateway import Gateway
 from fleet_hackathon.registry import AgentRegistry
 from fleet_hackathon.telemetry import AuditLogger
