@@ -41,6 +41,18 @@ from fastapi.responses import HTMLResponse
 from fleet_hackathon import actions, dashboard, demo_stream, runtime, seed_demo_data
 from fleet_hackathon.firestore_client import get_db
 
+# Cloud Run captures stdout/stderr, but uvicorn only configures its OWN loggers
+# (uvicorn.access and friends). This app's module loggers inherit the root
+# logger, which defaults to WARNING — so every logger.info() in this codebase
+# was silently dropped in production. Found 2026-08-27 when narrate.py's
+# "gemini_call" line, written specifically as deploy-time evidence that real
+# Vertex AI traffic is happening, produced nothing in Cloud Logging while the
+# narration itself was demonstrably working on the live page.
+logging.basicConfig(
+    level=os.environ.get("FLEET_LOG_LEVEL", "INFO").upper(),
+    format="%(levelname)s %(name)s %(message)s",
+)
+
 logger = logging.getLogger(__name__)
 
 
