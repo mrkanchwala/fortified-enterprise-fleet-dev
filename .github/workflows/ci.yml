@@ -1,0 +1,46 @@
+name: CI
+
+# Runs on the default branch and on pull requests. No secrets are used, and no
+# job can reach Google Cloud: narration is opt-in via FLEET_NARRATION_ENABLED,
+# which is left unset here, so the suite cannot spend a Vertex AI call even by
+# accident. GOOGLE_CLOUD_PROJECT is set to a dummy value only because config.py
+# reads it at import time; every test runs against the in-memory Firestore fake
+# in tests/conftest.py.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_CLOUD_PROJECT: ci-test-project
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      # --frozen fails the build rather than silently re-resolving if uv.lock
+      # drifts from pyproject.toml, matching the production Dockerfile.
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # uvx, not `uv run` — ruff is deliberately not a project dependency, so
+      # it runs from a standalone tool environment rather than forcing a
+      # pyproject/uv.lock change just to lint.
+      - name: Lint
+        run: uvx ruff check src/ tests/
+
+      - name: Test
+        run: uv run pytest -q
