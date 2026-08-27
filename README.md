@@ -57,7 +57,16 @@ The Gmail notifier reads its credential from environment variables the deployed 
 
 ## Technologies used
 
-Google ADK, Gemini, FastAPI, Firestore, Cloud Run, Cloud Scheduler, OpenTelemetry, uv.
+Google ADK 2.6.2 and Gemini 3.5 Flash, reached through Vertex AI. Cloud Run hosts the service,
+Firestore holds state, and Cloud Scheduler drives a 30 minute beat. FastAPI serves both the
+dashboard and the agent run endpoints, with OpenTelemetry-shaped audit records and uv for
+dependency management.
+
+Each of the five agents reaches its decision in pure Python, which keeps the enforced dispatch
+path deterministic and unit-testable. Gemini then writes the one sentence explanation that renders
+beside that decision in the audit log, so the reasoning a judge reads was generated live by a real
+model call. That call sits behind a per-tick ceiling and a Firestore cache, because a live call
+takes around six seconds and the scheduled tick runs against a fixed request deadline.
 
 ## Run locally
 
