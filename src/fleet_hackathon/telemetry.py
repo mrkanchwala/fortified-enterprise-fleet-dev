@@ -25,6 +25,13 @@ class AuditEntry:
     success_criterion: str
     drift_detected: bool = False
     attributes: dict = field(default_factory=dict)
+    # Gemini-written, one sentence, optional. Top-level rather than inside
+    # `attributes` because that field already carries two unrelated things (the
+    # raw action result dict from Gateway._execute, and per-agent extras like
+    # outreach_check's model_armor note) — model output is a third semantics.
+    # Entries written before this shipped have no such key, and both shapes stay
+    # live until the log turns over, so every reader must use .get("narration").
+    narration: str | None = None
     timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict:
@@ -37,6 +44,7 @@ class AuditEntry:
             "success_criterion": self.success_criterion,
             "drift_detected": self.drift_detected,
             "attributes": self.attributes,
+            "narration": self.narration,
             "timestamp": self.timestamp,
         }
 
@@ -58,6 +66,7 @@ class AuditLogger:
         success_criterion: str,
         drift_detected: bool = False,
         attributes: dict | None = None,
+        narration: str | None = None,
     ) -> AuditEntry:
         entry = AuditEntry(
             trace_id=trace_id,
@@ -68,6 +77,7 @@ class AuditLogger:
             success_criterion=success_criterion,
             drift_detected=drift_detected,
             attributes=attributes or {},
+            narration=narration,
         )
         self._db.collection(COLLECTION_AUDIT_LOG).add(entry.to_dict())
         return entry

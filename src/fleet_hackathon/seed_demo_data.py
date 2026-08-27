@@ -29,6 +29,15 @@ with every take — a number that could get narrated on camera in Step 11.
 Same discipline as the audit-log clear: makes the "known starting state"
 promise true for this collection too.
 
+Narration reset (2026-08-27, /cso H1): a re-seed also clears
+COLLECTION_NARRATION_CACHE. Cached Gemini narration is keyed by decision class,
+so one bad sentence is served to every later entry of that class for the rest of
+the judging window, and nothing else in the app deletes it. This clear is the
+manual remedy; narration._NARRATION_VERSION is the deploy-time one. Same
+discipline as the two resets above: makes the "known starting state" promise
+true for model output too, which matters most right before a recording take —
+a rehearsal's cached sentence would otherwise survive into the real one.
+
 Client/amount pairs below are real samples pulled from the workspace's
 existing `tools/demo-crm-mcp/crm_demo.db` (Quadriga's own public demo CRM
 dataset, ~19K synthetic rows, fictional "Northbridge Solutions" universe) —
@@ -60,6 +69,7 @@ from fleet_hackathon.config import (
     COLLECTION_GROWTH_SNAPSHOT,
     COLLECTION_INVOICES,
     COLLECTION_LEADS,
+    COLLECTION_NARRATION_CACHE,
     COLLECTION_PORTFOLIO_ENGAGEMENTS,
     COLLECTION_PORTFOLIO_INVOICES,
     COLLECTION_SALES_PIPELINE,
@@ -92,6 +102,7 @@ def seed(db, now: datetime | None = None) -> dict:
         "sales_pipeline": 0,
         "audit_log_cleared": 0,
         "cash_events_cleared": 0,
+        "narration_cache_cleared": 0,
     }
 
     # --- Audit log reset — see module docstring ("Audit-log reset") ------
@@ -99,6 +110,9 @@ def seed(db, now: datetime | None = None) -> dict:
 
     # --- Cash-events reset — see module docstring ("Cash-events reset") --
     summary["cash_events_cleared"] = _clear_collection(db, COLLECTION_CASH_EVENTS)
+
+    # --- Narration cache reset — see module docstring ("Narration reset") -
+    summary["narration_cache_cleared"] = _clear_collection(db, COLLECTION_NARRATION_CACHE)
 
     # --- Outreach-Check: 2 leads ---------------------------------------
     leads = [

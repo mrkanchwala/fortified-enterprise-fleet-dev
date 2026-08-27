@@ -117,3 +117,41 @@ def test_caps_are_named_constants_not_literals(cap_name):
     """Guards against a future edit re-inlining the number — the 200 that caused
     this was a bare literal in render()."""
     assert isinstance(getattr(dashboard, cap_name), int)
+
+
+# --- Byte budget (added 2026-08-27, narration) --------------------------------
+
+PAGE_BYTE_BUDGET = 120_000
+"""The row caps above bound the number of rendered entries, not their size, so
+they cannot detect a field growing. Narration adds a Gemini sentence to every
+narrated entry — one measured live call on 2026-08-27 returned 224 characters,
+roughly double the 120 assumed when the hook was designed. At 224 chars across
+the 75-row activity cap plus the kanban overflow that is ~20 KB on top of the
+86,852 B the page measured after the 2026-08-12 optimisation, landing near
+107 KB. This budget is the headroom above that, and it is the assertion that
+would actually fail if narration length drifted."""
+
+
+def test_page_stays_within_its_byte_budget_with_every_entry_narrated(fake_db):
+    db = _seeded_db(fake_db)
+    logger = AuditLogger(db)
+    # Worst realistic case: the full rendered slice, every entry narrated at the
+    # measured live length.
+    narration = "N" * 224
+    for i in range(dashboard._ACTIVITY_LOG_RENDER_CAP * 2):
+        logger.log(
+            trace_id=logger.new_trace_id(),
+            agent_name="payment_followup",
+            action="send_reminder",
+            status="drift",
+            detail=f"synthetic entry {i} with a realistic length of deterministic detail text",
+            success_criterion="no invoice receives a third reminder without human handoff",
+            drift_detected=True,
+            narration=narration,
+        )
+
+    size = len(dashboard.render(db).encode("utf-8"))
+
+    assert size <= PAGE_BYTE_BUDGET, (
+        f"page grew to {size:,} B, above the {PAGE_BYTE_BUDGET:,} B budget"
+    )

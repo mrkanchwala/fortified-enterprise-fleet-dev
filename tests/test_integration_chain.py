@@ -71,8 +71,14 @@ def test_invoice_agent_does_not_duplicate_the_pre_seeded_hero_followup_invoices(
 
 
 def test_payment_followup_graduated_actions_across_the_seeded_invoices(fake_db):
+    """2026-08-27 fix: pins `now=NOW`, the same anchor the fixture is seeded
+    against. The 2026-08-10 now-injection fix was applied to the outreach test
+    above but missed this one. inv-followup-002 is seeded due_ts = NOW - 20 days;
+    left on real wall-clock it crossed OVERDUE_ESCALATION_DAYS (30) once ~10 real
+    calendar days had passed since NOW, flipping send_reminder -> escalate_to_human.
+    Failed on a clean checkout before any narration work."""
     db = _seeded_db(fake_db)
-    results = runtime.run_agent_cycle(db, "payment_followup")
+    results = runtime.run_agent_cycle(db, "payment_followup", now=NOW)
 
     by_invoice = {r["invoice_id"]: r for r in results}
     # inv-followup-003 is the drift scenario's target — forced, not the agent's real decision.

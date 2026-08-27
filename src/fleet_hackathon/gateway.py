@@ -26,6 +26,7 @@ from fleet_hackathon.config import (
     OVERDUE_ESCALATION_DAYS,
     OVERDUE_ESCALATION_REMINDER_COUNT,
 )
+from fleet_hackathon.narration import NullNarrator
 from fleet_hackathon.notifier import NullNotifier
 from fleet_hackathon.registry import AgentRegistry
 from fleet_hackathon.telemetry import AuditLogger
@@ -71,11 +72,15 @@ _ACTIONS_WITH_NOTIFIER = frozenset(
 
 
 class Gateway:
-    def __init__(self, db, registry: AgentRegistry, audit_logger: AuditLogger, notifier=None):
+    def __init__(self, db, registry: AgentRegistry, audit_logger: AuditLogger, notifier=None, narrator=None):
         self._db = db
         self._registry = registry
         self._audit = audit_logger
         self._notifier = notifier or NullNotifier()
+        # Same dependency-injection contract as `notifier`: defaults to a no-op
+        # so the whole test suite runs with zero live Gemini calls, per the
+        # standing cost-discipline rule.
+        self._narrator = narrator or NullNarrator()
 
     def client_for(self, agent_name: str) -> GatewayClient:
         scope = self._registry.get(agent_name)
@@ -98,6 +103,14 @@ class Gateway:
             status="blocked",
             detail=f"action '{action}' outside declared capability scope",
             success_criterion=criterion,
+            narration=self._narrator.narrate(
+                agent_name=agent_name,
+                action=action,
+                status="blocked",
+                success_criterion=criterion,
+                drift_detected=False,
+                trace_id=trace_id,
+            ),
         )
 
     def _execute(self, agent_name: str, trace_id: str, action: str, **kwargs) -> dict:
@@ -112,6 +125,9 @@ class Gateway:
             result = _ACTIONS[action](self._db, **kwargs)
 
         status = "drift" if drift else result.get("status", "ok")
+        # Narration happens after the action has run and after the deterministic
+        # detail exists, so an LLM failure can never affect whether the action
+        # took place or what the audit log records about it.
         self._audit.log(
             trace_id=trace_id,
             agent_name=agent_name,
@@ -121,6 +137,14 @@ class Gateway:
             success_criterion=criterion,
             drift_detected=drift,
             attributes=result,
+            narration=self._narrator.narrate(
+                agent_name=agent_name,
+                action=action,
+                status=status,
+                success_criterion=criterion,
+                drift_detected=drift,
+                trace_id=trace_id,
+            ),
         )
         return result
 

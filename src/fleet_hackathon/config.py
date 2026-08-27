@@ -33,6 +33,14 @@ COLLECTION_SALES_PIPELINE = "demo_sales_pipeline"  # static real contract-stage 
 COLLECTION_STATS = "fleet_stats"
 AUDIT_COUNTER_DOC = "audit_counter"
 
+# Gemini narration cache. Keyed by a hash of the exact prompt string, which
+# carries only class-level facts (agent/action/status/drift/success_criterion),
+# never record specifics — see narration._summarize for why that is a
+# correctness requirement rather than a style choice. The key space is therefore
+# bounded by the number of decision classes (~5 agents x 6 actions x 4 statuses),
+# so this collection self-bounds well under 100 documents and needs no pruner.
+COLLECTION_NARRATION_CACHE = "fleet_narration_cache"
+
 # Payment-Followup graduated escalation threshold (days overdue, or reminder count — whichever first).
 OVERDUE_ESCALATION_DAYS = 30
 OVERDUE_ESCALATION_REMINDER_COUNT = 2

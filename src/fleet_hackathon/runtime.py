@@ -18,6 +18,7 @@ from fleet_hackathon.agents import (
 from fleet_hackathon.capability import ALL_SCOPES
 from fleet_hackathon.config import COLLECTION_DRIFT_SCENARIO
 from fleet_hackathon.gateway import Gateway
+from fleet_hackathon.narration import get_narrator
 from fleet_hackathon.notifier import get_notifier
 from fleet_hackathon.registry import AgentRegistry
 from fleet_hackathon.telemetry import AuditLogger
@@ -48,7 +49,7 @@ def _drift_scenario(db) -> dict | None:
     return snap.to_dict() if snap.exists else None
 
 
-def run_agent_cycle(db, agent_name: str, now: datetime | None = None) -> list[dict]:
+def run_agent_cycle(db, agent_name: str, now: datetime | None = None, narrator=None) -> list[dict]:
     """`now` (2026-08-10): outreach_check, payment_followup, and analytics
     run_cycles all accept an injectable reference time — a test-only override
     so a deterministic seed fixture (an "within SLA" lead, a "35 days
@@ -63,7 +64,12 @@ def run_agent_cycle(db, agent_name: str, now: datetime | None = None) -> list[di
 
     registry = AgentRegistry(db)
     audit_logger = AuditLogger(db)
-    gateway = Gateway(db, registry, audit_logger, notifier=get_notifier())
+    # `narrator` is threaded in by run_all_cycles so all five agents share one
+    # per-tick budget. Constructing one here per agent would multiply the
+    # ceiling by five and put /tick back over its 300s deadline.
+    gateway = Gateway(
+        db, registry, audit_logger, notifier=get_notifier(), narrator=narrator or get_narrator(db)
+    )
 
     if agent_name == "outreach_check":
         return outreach_check.run_cycle(db, gateway, audit_logger, now=now)
@@ -88,4 +94,7 @@ def run_agent_cycle(db, agent_name: str, now: datetime | None = None) -> list[di
 
 
 def run_all_cycles(db) -> dict[str, list[dict]]:
-    return {name: run_agent_cycle(db, name) for name in AGENT_NAMES}
+    """One narrator for the whole beat — the narration ceiling is per tick, not
+    per agent (see narration.GeminiNarrator)."""
+    narrator = get_narrator(db)
+    return {name: run_agent_cycle(db, name, narrator=narrator) for name in AGENT_NAMES}

@@ -233,6 +233,12 @@ _PAGE_SHELL = """<!doctype html>
   details.drill-down summary::before {{ content: "▸ "; }}
   details.drill-down[open] summary::before {{ content: "▾ "; }}
   details.drill-down .drill-entry {{ padding: .35rem 0 0 .9rem; }}
+  .narration {{
+    margin-top: .3rem;
+    font-style: italic;
+    opacity: .78;
+    line-height: 1.35;
+  }}
 
   .help {{
     display: inline-flex; align-items: center; justify-content: center;
@@ -380,6 +386,21 @@ _PAGE_SHELL = """<!doctype html>
 
 def _esc(value) -> str:
     return html.escape(str(value)) if value is not None else ""
+
+
+def _narration_html(entry: dict) -> str:
+    """Gemini's one-sentence explanation, rendered beside the deterministic
+    detail rather than in place of it.
+
+    Two things this must never skip. It reads via .get() because entries
+    written before narration shipped have no such key, and both shapes stay
+    live until the audit log turns over. And it routes through _esc() because
+    this is the only field on the page whose content a model generates —
+    unescaped model output on a judge-facing page is stored XSS."""
+    text = entry.get("narration")
+    if not text:
+        return ""
+    return f'<div class="narration">{_esc(text)}</div>'
 
 
 def _help_icon(tip: str) -> str:
@@ -585,7 +606,7 @@ def _render_needs_your_attention(manager_rows: list[dict], flagged_managers: lis
         attention_body = '<div class="flag-list">' + "".join(
             f'<div class="flag-item"><strong>{_esc(_agent_label(e.get("agent_name")))}</strong> — '
             f"{_esc(_entry_subject(e))}{_esc(_status_label(e.get('status')))}"
-            f'<details class="drill-down"><summary>Why</summary><div class="drill-entry">{_esc(e.get("detail"))}</div></details>'
+            f'<details class="drill-down"><summary>Why</summary><div class="drill-entry">{_esc(e.get("detail"))}{_narration_html(e)}</div></details>'
             "</div>"
             for e in flagged_entries[:8]
         ) + "</div>"
@@ -722,7 +743,7 @@ def _render_activity_log(entries: list[dict]) -> str:
             f"<td>{_esc(_agent_label(entry.get('agent_name')))}</td>"
             f"<td>{_esc(_action_label(entry.get('action')))}</td>"
             f'<td><span class="pill pill--{tone}">{_esc(_status_label(status))}</span></td>'
-            f"<td>{_esc(entry.get('detail'))}</td>"
+            f"<td>{_esc(entry.get('detail'))}{_narration_html(entry)}</td>"
             f"</tr>"
         )
     if not rows:
